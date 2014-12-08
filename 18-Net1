@@ -1,0 +1,90 @@
+#### Protostar Net1
+
+##### About
+This level tests the ability to convert binary integers into ascii representation.  
+  
+This level is at /opt/protostar/bin/net1
+
+##### Source code
+```c
+#include "../common/common.c"
+
+#define NAME "net1"
+#define UID 998
+#define GID 998
+#define PORT 2998
+
+void run()
+{
+  char buf[12];
+  char fub[12];
+  char *q;
+
+  unsigned int wanted;
+
+  wanted = random();
+
+  sprintf(fub, "%d", wanted);
+
+  if(write(0, &wanted, sizeof(wanted)) != sizeof(wanted)) {
+      errx(1, ":(\n");
+  }
+
+  if(fgets(buf, sizeof(buf)-1, stdin) == NULL) {
+      errx(1, ":(\n");
+  }
+
+  q = strchr(buf, '\r'); if(q) *q = 0;
+  q = strchr(buf, '\n'); if(q) *q = 0;
+
+  if(strcmp(fub, buf) == 0) {
+      printf("you correctly sent the data\n");
+  } else {
+      printf("you didn't send the data properly\n");
+  }
+}
+
+int main(int argc, char **argv, char **envp)
+{
+  int fd;
+  char *username;
+
+  /* Run the process as a daemon */
+  background_process(NAME, UID, GID); 
+  
+  /* Wait for socket activity and return */
+  fd = serve_forever(PORT);
+
+  /* Set the client socket to STDIN, STDOUT, and STDERR */
+  set_io(fd);
+
+  /* Don't do this :> */
+  srandom(time(NULL));
+
+  run();
+}
+```
+
+Seems that we receive a raw integer data, we can get the integer with string formatting operation.
+
+##### Solution
+```python
+import socket
+import struct
+
+s = socket.socket()
+s.connect(("192.168.56.101",2998))
+
+data = s.recv(1024)
+data = "%d\n" % (struct.unpack('<i', data))
+print data
+
+s.send(data)
+print s.recv(1024)
+s.close()
+```
+
+##### Reference
+<https://github.com/Wins0n/Exploit-Exercises_ProtoStar/blob/master/protostar_part1.md>  
+<https://thesprawl.org/research/exploit-exercises-protostar-network/#net-1>  
+<https://docs.python.org/2/library/stdtypes.html#string-formatting>
